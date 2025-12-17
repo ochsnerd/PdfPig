@@ -16,6 +16,7 @@
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
+    using Outline.Destinations;
     using Images;
     using PdfFonts;
     using Tokens;
@@ -859,6 +860,42 @@
 
             var uriAction = new UriAction(url);
             links.Add((new DictionaryToken(linkAnnotation), uriAction));
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an internal document link annotation to the page at the specified rectangle area.
+        /// </summary>
+        /// <param name="destination">The destination within the current document to link to</param>
+        /// <param name="linkArea">The rectangular area on the page that will be clickable</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(ExplicitDestination destination, PdfRectangle linkArea)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            var linkAnnotation = new Dictionary<NameToken, IToken>
+            {
+                [NameToken.Type] = NameToken.Annot,
+                [NameToken.Subtype] = NameToken.Link,
+                [NameToken.Rect] = new ArrayToken([
+                    new NumericToken(linkArea.BottomLeft.X),
+                    new NumericToken(linkArea.BottomLeft.Y),
+                    new NumericToken(linkArea.TopRight.X),
+                    new NumericToken(linkArea.TopRight.Y)
+                ]),
+                [NameToken.Border] = new ArrayToken([
+                    new NumericToken(0),
+                    new NumericToken(0),
+                    new NumericToken(0)
+                ])
+            };
+
+            var goToAction = new GoToAction(destination);
+            links.Add((new DictionaryToken(linkAnnotation), goToAction));
 
             return this;
         }
