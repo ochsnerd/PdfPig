@@ -94,7 +94,7 @@
         private IPageContentStream currentStream;
 
         // links to be resolved when all page references are available
-        internal readonly List<(DictionaryToken token, PdfAction action)>? links;
+        internal readonly List<(DictionaryToken token, PdfAction action)> links = [];
 
         // maps fonts added using PdfDocumentBuilder to page font names
         private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
@@ -825,6 +825,42 @@
             currentStream.Add(Pop.Value);
 
             return new AddedImage(reference.Data, png.Width, png.Height);
+        }
+
+        /// <summary>
+        /// Adds a URL link annotation to the page at the specified rectangle area.
+        /// </summary>
+        /// <param name="url">The URL to link to</param>
+        /// <param name="linkArea">The rectangular area on the page that will be clickable</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(string url, PdfRectangle linkArea)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                throw new ArgumentException("URL cannot be null or empty", nameof(url));
+            }
+
+            var linkAnnotation = new Dictionary<NameToken, IToken>
+            {
+                [NameToken.Type] = NameToken.Annot,
+                [NameToken.Subtype] = NameToken.Link,
+                [NameToken.Rect] = new ArrayToken([
+                    new NumericToken(linkArea.BottomLeft.X),
+                    new NumericToken(linkArea.BottomLeft.Y),
+                    new NumericToken(linkArea.TopRight.X),
+                    new NumericToken(linkArea.TopRight.Y)
+                ]),
+                [NameToken.Border] = new ArrayToken([
+                    new NumericToken(0),
+                    new NumericToken(0),
+                    new NumericToken(0)
+                ])
+            };
+
+            var uriAction = new UriAction(url);
+            links.Add((new DictionaryToken(linkAnnotation), uriAction));
+
+            return this;
         }
 
         /// <summary>

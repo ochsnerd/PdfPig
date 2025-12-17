@@ -1295,6 +1295,38 @@
             }
         }
 
+        [Fact]
+        public void CanAddLinkToPage()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            var linkArea = new PdfRectangle(25, 690, 200, 720);
+            page.AddLink("https://github.com", linkArea);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanAddLinkToPage), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+                var page1 = document.GetPage(1);
+                
+                var annotations = page1.GetAnnotations().ToList();
+                Assert.Single(annotations);
+                
+                var linkAnnotation = annotations[0];
+                Assert.Equal(Annotations.AnnotationType.Link, linkAnnotation.Type);
+                Assert.Equal(linkArea, linkAnnotation.Rectangle);
+                
+                // Verify the URI link target
+                Assert.NotNull(linkAnnotation.Action);
+                var uriAction = Assert.IsType<Actions.UriAction>(linkAnnotation.Action);
+                Assert.Equal("https://github.com", uriAction.Uri);
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
