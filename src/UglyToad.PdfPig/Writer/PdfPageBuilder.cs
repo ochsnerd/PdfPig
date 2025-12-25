@@ -836,32 +836,7 @@
         /// <returns>This page builder for method chaining</returns>
         public PdfPageBuilder AddLink(string url, PdfRectangle linkArea)
         {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                throw new ArgumentException("URL cannot be null or empty", nameof(url));
-            }
-
-            var linkAnnotation = new Dictionary<NameToken, IToken>
-            {
-                [NameToken.Type] = NameToken.Annot,
-                [NameToken.Subtype] = NameToken.Link,
-                [NameToken.Rect] = new ArrayToken([
-                    new NumericToken(linkArea.BottomLeft.X),
-                    new NumericToken(linkArea.BottomLeft.Y),
-                    new NumericToken(linkArea.TopRight.X),
-                    new NumericToken(linkArea.TopRight.Y)
-                ]),
-                [NameToken.Border] = new ArrayToken([
-                    new NumericToken(0),
-                    new NumericToken(0),
-                    new NumericToken(0)
-                ])
-            };
-
-            var uriAction = new UriAction(url);
-            links.Add((new DictionaryToken(linkAnnotation), uriAction));
-
-            return this;
+            return AddLink(new LinkAnnotation(new UriAction(url), linkArea));
         }
 
         /// <summary>
@@ -872,31 +847,17 @@
         /// <returns>This page builder for method chaining</returns>
         public PdfPageBuilder AddLink(ExplicitDestination destination, PdfRectangle linkArea)
         {
-            if (destination == null)
-            {
-                throw new ArgumentNullException(nameof(destination));
-            }
+            return AddLink(new LinkAnnotation(new GoToAction(destination), linkArea));
+        }
 
-            var linkAnnotation = new Dictionary<NameToken, IToken>
-            {
-                [NameToken.Type] = NameToken.Annot,
-                [NameToken.Subtype] = NameToken.Link,
-                [NameToken.Rect] = new ArrayToken([
-                    new NumericToken(linkArea.BottomLeft.X),
-                    new NumericToken(linkArea.BottomLeft.Y),
-                    new NumericToken(linkArea.TopRight.X),
-                    new NumericToken(linkArea.TopRight.Y)
-                ]),
-                [NameToken.Border] = new ArrayToken([
-                    new NumericToken(0),
-                    new NumericToken(0),
-                    new NumericToken(0)
-                ])
-            };
-
-            var goToAction = new GoToAction(destination);
-            links.Add((new DictionaryToken(linkAnnotation), goToAction));
-
+        /// <summary>
+        /// Adds a link annotation to the page.
+        /// </summary>
+        /// <param name="link">The link annotation to add</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(LinkAnnotation link)
+        {
+            links.Add((link.ToToken(), link.Action));
             return this;
         }
 
